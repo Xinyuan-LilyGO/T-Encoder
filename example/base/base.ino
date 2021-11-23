@@ -13,14 +13,14 @@ GND - to microcontroler GND
 VCC                    microcontroler VCC (then set ROTARY_ENCODER_VCC_PIN -1) 
 
 */
-#define LED_GREEG					25
+#define LED_GREEG						25
 #define LED_BLUE					26
 #define LED_RED  					27
 #define BUZZER 						19
 #define ROTARY_ENCODER_A_PIN 		36
 #define ROTARY_ENCODER_B_PIN    	37
 #define ROTARY_ENCODER_BUTTON_PIN 	38
-#define ROTARY_ENCODER_VCC_PIN 		-1 
+#define ROTARY_ENCODER_VCC_PIN 		-1 /* 27 put -1 of Rotary encoder Vcc is connected directly to 3,3V; else you can use declared output pin for powering rotary encoder */
 
 //depending on your encoder - try 1,2 or 4 to get expected behaviour
 //#define ROTARY_ENCODER_STEPS 1
@@ -31,7 +31,6 @@ VCC                    microcontroler VCC (then set ROTARY_ENCODER_VCC_PIN -1)
 AiEsp32RotaryEncoder rotaryEncoder = AiEsp32RotaryEncoder(ROTARY_ENCODER_A_PIN, ROTARY_ENCODER_B_PIN, ROTARY_ENCODER_BUTTON_PIN, ROTARY_ENCODER_VCC_PIN, ROTARY_ENCODER_STEPS);
 
 int16_t test_limits = 2;
-bool beep_flgs=false;
 
 int led_red();
 int led_green();
@@ -51,7 +50,7 @@ void rotary_onButtonClick();
 // use 5000 Hz as a LEDC base frequency
 #define LEDC_BASE_FREQ     2000
 
-
+bool on_Button_down = false;
 void setup() {
   Serial.begin(115200);
 
@@ -73,7 +72,7 @@ void setup() {
 
     rotaryEncoder.setup(
         [] { rotaryEncoder.readEncoder_ISR(); },
-        [] { rotary_onButtonClick(); });
+        [] { on_Button_down=true; });
     //optionally we can set boundaries and if values should cycle or not
     bool circleValues = false;
     rotaryEncoder.setBoundaries(0, 1000, circleValues); //minValue, maxValue, circleValues true|false (when max go to min and vice versa)
@@ -95,24 +94,27 @@ void setup() {
 void loop() {
 
 //in loop call your custom function which will process rotary encoder values
-    rotary_loop();
-    delay(50);
     if (millis() > 20000)
         rotaryEncoder.enable();
-
-if(beep_flgs){buzzer();beep_flgs=false;}
+ 
+    rotary_loop();
+    delay(50);
 
 }
 
 void rotary_onButtonClick()
-{
-     Serial.print(" buzzer");
-  
+{ 
+
+    if(on_Button_down){
+     
     static unsigned long lastTimePressed = 0;
     if (millis() - lastTimePressed < 500)
         return; //ignore multiple press in that time milliseconds
     lastTimePressed = millis();
-    beep_flgs=true;
+
+
+    buzzer();
+    Serial.print(" buzzer");
 
     rotaryEncoder.setBoundaries(-test_limits, test_limits, false);
     Serial.print("new boundaries are between minimumn value ");
@@ -124,10 +126,14 @@ void rotary_onButtonClick()
     if (test_limits >= 2048)
         test_limits = 2;
     test_limits *= 2;
+
+    on_Button_down = false;
+    }
 }
 
 void rotary_loop()
 {
+    rotary_onButtonClick();
     //lets see if anything changed
     int16_t encoderDelta = rotaryEncoder.encoderChanged();
 
@@ -142,7 +148,7 @@ void rotary_loop()
         Serial.print("+");
     }
         
-    if (encoderDelta < 0)
+   else if (encoderDelta < 0)
     {
         led_red();
          Serial.print("-");
