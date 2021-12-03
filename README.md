@@ -4,6 +4,7 @@
 
 ## **[English](./README.MD) | [中文](./README_CN.MD)**
 
+
 <h3 align = "left">Quick start:</h3>
 
 **USE Arduino IDE**
@@ -17,6 +18,7 @@
 1. Install VSCode
 2. Install the PlatformIO extension in VSCode
 
+![](https://github.com/Xinyuan-LilyGO/T-Encoder/blob/main/image/IMAGE1.jpg)
 
 <h3 align = "left">Product 📷:</h3>
 
